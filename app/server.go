@@ -54,9 +54,8 @@ func HandleConnection(conn net.Conn) {
 		return
 	} else if strings.Split(path, "/")[1] == "files" {
 		filename := strings.Trim(strings.Split(path, "/")[2], "\r\n")
-		fmt.Println(filename)
-		absPath := "/tmp/" + filename
-		fmt.Println(absPath)
+		dir := os.Args[2]
+		absPath := dir + filename
 		data, err := os.ReadFile(absPath)
 		if err == nil{
 			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:%d\r\n\r\n%s", len(data), string(data))))
