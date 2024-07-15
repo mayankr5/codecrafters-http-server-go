@@ -34,6 +34,7 @@ func main() {
 }
 
 func HandleConnection(conn net.Conn) {
+	defer conn.Close()
 	req := make([]byte, 1024)
 	n, err := conn.Read(req)
 	if err != nil {
@@ -56,8 +57,8 @@ func HandleConnection(conn net.Conn) {
 		fmt.Println(filename)
 		absPath := "/tmp/" + filename
 		fmt.Println(absPath)
-		if err == nil {
-			data, _ := os.ReadFile(absPath)
+		data, err := os.ReadFile(absPath)
+		if err == nil{
 			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:%d\r\n\r\n%s", len(data), string(data))))
 			return
 		}
