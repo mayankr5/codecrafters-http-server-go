@@ -50,10 +50,23 @@ func HandleConnection(conn net.Conn) {
 		l := len(strings.Split(request, " "))
 		userAgent := strings.Trim(strings.Split(request, " ")[l-1], "\r\n")
 		conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(userAgent), userAgent)))
+		return
+	} else if strings.Split(path, "/")[1] == "files" {
+		filename := strings.Trim(strings.Split(path, "/")[2], "\r\n")
+		fmt.Println(filename)
+		absPath := "/tmp/" + filename
+		fmt.Println(absPath)
+		if err == nil {
+			data, _ := os.ReadFile(absPath)
+			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:%d\r\n\r\n%s", len(data), string(data))))
+			return
+		}
 	} else if strings.Split(path, "/")[1] == "echo" {
 		message := strings.Split(path, "/")[2]
 		conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(message), message)))
-	} else {
-		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		return
 	}
+
+	conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	return
 }
