@@ -63,7 +63,7 @@ func HandleConnection(conn net.Conn) {
 			ua = strings.Trim(strings.Split(val, " ")[1], "\r\n")
 		}
 		if strings.HasPrefix(val, "Accept-Encoding:") {
-			em = strings.Trim(strings.Split(val, " ")[1], "\r\n")
+			em = strings.Trim(strings.Split(val, ": ")[1], "\r\n")
 		}
 	}
 
@@ -75,10 +75,13 @@ func HandleConnection(conn net.Conn) {
 		response = "HTTP/1.1 200 OK\r\n\r\n"
 	} else if m == "GET" && strings.HasPrefix(p, "/echo") {
 		bd = p[6:]
-		if em == "gzip"{
-			w.Write([]byte(bd))
-			bd = b.String();
-			ce = "Content-Encoding: gzip\r\n"
+		emList := strings.Split(em, ", ")
+		for _, val := range emList {
+			if val == "gzip"{
+				w.Write([]byte(bd))
+				bd = b.String();
+				ce = "Content-Encoding: gzip\r\n"
+			}
 		}
 		response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n%sContent-Length:%d\r\n\r\n%s", ce, len(bd), bd)
 	} else if m == "GET" && strings.HasPrefix(p, "/user-agent") {
