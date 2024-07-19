@@ -80,6 +80,7 @@ func HandleConnection(conn net.Conn) {
 			if val == "gzip"{
 				w.Write([]byte(bd))
 				bd = b.String();
+				w.Close()
 				ce = "Content-Encoding: gzip\r\n"
 			}
 		}
