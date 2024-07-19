@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"path"
+	"bytes"
+	"compress/gzip"
 )
 
 
@@ -50,22 +52,46 @@ func HandleConnection(conn net.Conn) {
 	m := strings.Split(r[0], " ")[0]
 	p := strings.Split(r[0], " ")[1]
 
+	var ua string
+	var em string
 	var response string
+	var bd string
+	ce := "";
+
+	for _, val := range r {
+		if strings.HasPrefix(val, "User-Agent:") {
+			ua = strings.Trim(strings.Split(val, " ")[1], "\r\n")
+		}
+		if strings.HasPrefix(val, "Accept-Encoding:") {
+			em = strings.Trim(strings.Split(val, " ")[1], "\r\n")
+		}
+	}
+
+
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
 
 	if m == "GET" && p == "/" {
 		response = "HTTP/1.1 200 OK\r\n\r\n"
 	} else if m == "GET" && strings.HasPrefix(p, "/echo") {
-		response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:%d\r\n\r\n%s", len(p[6:]), p[6:])
+		bd = p[6:]
+		if em == "gzip"{
+			w.Write([]byte(bd))
+			bd = b.String();
+			ce = "Content-Encoding: gzip\r\n"
+		}
+		response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n%sContent-Length:%d\r\n\r\n%s", ce, len(bd), bd)
 	} else if m == "GET" && strings.HasPrefix(p, "/user-agent") {
-		ua := strings.Split(r[2], " ")[1]
+		bd = ua
 		response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:%d\r\n\r\n%s", len(ua), ua)
 	} else if m == "GET" && strings.HasPrefix(p, "/files") {
 		dir := os.Args[2]
 		content, err := os.ReadFile(path.Join(dir, p[7:]))
+		bd = string(content)
 		if err != nil {
 			response = "HTTP/1.1 404 Not Found\r\n\r\n"
 		} else {
-			response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", len(content), string(content))
+			response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", len(bd), string(bd))
 		}
 	} else if m == "POST" && strings.HasPrefix(p, "/files") {
 		content := strings.Trim(r[len(r)-1], "\x00")
